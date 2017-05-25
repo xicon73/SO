@@ -10,7 +10,7 @@ ssize_t readLn(int fildes, char *buf, size_t nbyte, int* caracteresL) {
   int nCarateresL = 0;
   char *aux = buf;
   int i;
-  // Lê o ficheiro enquando existe
+  // Lê o ficheiro enquando não for ultrapassado o numero de bytes.
   while((aux-buf < PIPE_BUF) && (i = read(fildes,aux, nbyte)) == 1) {
     nCarateresL++;
     // Se chega ao fim da linha/ficheiro
@@ -30,7 +30,7 @@ ssize_t readLn(int fildes, char *buf, size_t nbyte, int* caracteresL) {
   return (aux - buf);
 }
 
-bool prefix(const char *command, const char *test) {
+int prefix(const char *command, const char *test) {
   return strncmp(command,test,strlen(test));
 }
 
@@ -39,7 +39,7 @@ char* addChar(char* str, char c){
   //Se a string for vazia cria uma com apenas um char
   if(str==NULL) {
     char* new = malloc(sizeof(char));
-    new[o]=c;
+    new[0]=c;
     return new;
   }
   //Caso exista o char na string, retorna a mesma
@@ -83,6 +83,7 @@ char* removeChar(char* str, char c){
   return new;
 }
 
+/*
 int readC(char** commands) {
   char* buf = malloc(sizeof(char)*25);
   int* charRead = malloc(sizeof(int));
@@ -95,12 +96,55 @@ int readC(char** commands) {
     i++;
   }
   return i;
-}
+}*/
 
 
 int main() {
-	
-	char *buf= malloc(sizeof(char)*PIPE_BUF));   //buffer para a leitura do input
-	int *c = malloc(sizeof(int));  // 
-	return 0;
+  char* buf= malloc(sizeof(char)*100);   //buffer para a leitura do input
+  int* c = malloc(sizeof(int));  //
+  int n;
+  while((n = readLn(0,buf,1,c)) != -1) {
+    char* aux = malloc(sizeof(char)*strlen(buf));
+    strcpy(aux,buf);
+    char* aux1 = malloc(sizeof(char)*strlen(buf));
+    strcpy(aux1,buf);
+    char* command = strtok(aux," ");
+    char* _id = strtok(NULL," ");
+    int id = atoi(_id);
+    if(!(prefix(aux,"node"))) {
+        char* componente = strtok(NULL," ");
+        char* argumentos = strtok(NULL, "\n");
+        printf("%d\n%s\n%s\n",id,&*componente,&*argumentos);
+
+        //execvp(componente[0],argumentos)
+
+    }
+    else if (!(prefix(aux,"connect"))){
+      int i = 0;
+      char* campo;
+      while((campo = strtok(NULL," ")) != NULL) {
+        i++;
+      }
+      int ids[i];
+      int j=0;
+      char* _campo = strtok(aux1," ");
+      _campo = strtok(NULL, " ");
+      while((_campo = strtok(NULL," ")) != NULL) {
+        char* aux2 = malloc(sizeof(char)*strlen(_campo));
+        strcpy(aux2,_campo);
+        ids[j]=atoi(aux2);
+        j++;
+      }
+      for(i=0;i<j;i++){
+        printf("o id %d vai se ligar ao id %d\n",id,ids[i]);
+      }
+    }
+    else if (!(prefix(aux,"disconnect"))) {
+      char* _id2 = strtok(NULL, "\n");
+      int id2 = atoi(_id2);
+      printf("O id %d vai se desconectar do id %d\n",id,id2);
+      // Restante Código de disconnect
+    }
+	}
+  return 0;
 }
