@@ -96,3 +96,11 @@ int readC(char** commands) {
   }
   return i;
 }
+
+
+int main() {
+	
+	char *buf= malloc(sizeof(char)*PIPE_BUF));   //buffer para a leitura do input
+	int *c = malloc(sizeof(int));  // 
+	return 0;
+}
