@@ -11,7 +11,7 @@ ssize_t readLn(int fildes, char *buf, size_t nbyte, int* caracteresL) {
   char *aux = buf;
   int i;
   // Lê o ficheiro enquando existe
-  while((aux-buf < PIPE_BUF) && (n = read(fildes,aux, nbyte)) == 1) {
+  while((aux-buf < PIPE_BUF) && (i = read(fildes,aux, nbyte)) == 1) {
     nCarateresL++;
     // Se chega ao fim da linha/ficheiro
     if(*aux == '\n' || *aux == EOF) {
