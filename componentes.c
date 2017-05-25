@@ -3,9 +3,9 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
-
-//Função readln, feita no guião 1 exercício 6
+//incompleto
 int readln(int fildes, void *buf, size_t nbyte){
     int r = 1, tam = 0;
     char *c = buf;
@@ -21,30 +21,40 @@ int readln(int fildes, void *buf, size_t nbyte){
     return tam;
 }
 
-int constant (char *n){
-	//char c ;
-    int r = 1, en;
-	char buf[1024];
-    for(int i=1; r ; i++){
-        r = readln (0, buf+i, sizeof(buf)-i);
-        if (r == 0) break; 
-	    write(1, buf, r+i);
-   	   // write(1, n, 2);
+int constant(char *num){
+	int len = strlen(num);
+    int r = 1, i, n;
+    char buf[1024];
+    while(r){
+        //n = sprintf(buf, "% 6d  ", i);
+        r = readln(0, buf, sizeof(buf) - len);
+        if(r == 0) break;
+		buf[sizeof(buf)-len] = atoi(num);
+        write(1, buf, r+len);
+		write(1, num, len);
     }
-	
-	//write(1, n , 2);
-	return 1;
+    return 0;
+}
+//
+
+int filter (char *col, char *op, char *oper){
+return 1;
 }
 
-
-
+/*char **leitura (){
+		int o, i j;
+		o = open("input.txt", O_RDONLY);
+		if (o > 0){
+           for(i=0; i!=NULL;i++);
+				for(j
+}*/
 
 int main(int argc, char **argv){
 	
-
-	if(strcmp(argv[1],"const")==0){
-			 constant (argv[2]);
-	}
+	
+	//leitura();
+	if(strcmp(argv[1],"const")==0) constant (argv[2]);
+	if(strcmp(argv[1],"filter")==0) filter(argv[1], argv[2], argv[3]);
 	else return 1;
 	
 	return 0;
