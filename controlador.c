@@ -6,7 +6,7 @@
 #include <math.h>
 #define PIPE_BUF 100
 
-ssize_t _readln(int fildes, char *buf, size_t nbyte, int* caracteresL) {
+ssize_t readLn(int fildes, char *buf, size_t nbyte, int* caracteresL) {
   int nCarateresL = 0;
   char *aux = buf;
   int i;
@@ -59,7 +59,7 @@ char* removeChar(char* str, char c){
   int i;
   int size = 0;
   char* new = NULL;
-
+  //Verifica existência do char aka número de ocorrências diferentes
   for(i=0;i<strlen(str);i++) {
     if(str[i] != c) {
       size++;
@@ -81,4 +81,18 @@ char* removeChar(char* str, char c){
     }
   }
   return new;
+}
+
+int readC(char** commands) {
+  char* buf = malloc(sizeof(char)*25);
+  int* charRead = malloc(sizeof(int));
+  int n;
+  int i=0;
+  while((n = readLn(0,buf,1,charRead)) != -1) {
+    char* new = malloc(sizeof(char)*strlen(buf));
+    strcpy(new,buf);
+    commands[i] = new;
+    i++;
+  }
+  return i;
 }
