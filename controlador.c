@@ -103,19 +103,22 @@ int main() {
   char* buf= malloc(sizeof(char)*100);   //buffer para a leitura do input
   int* c = malloc(sizeof(int));  //
   int n;
-  while((n = readLn(0,buf,1,c)) != -1) {
+  int i;
+  int sair = 0;
+  while((n = readLn(0,buf,1,c))) {
+    if(!(prefix(buf,"sair"))) break;
     char* aux = malloc(sizeof(char)*strlen(buf));
     strcpy(aux,buf);
     char* aux1 = malloc(sizeof(char)*strlen(buf));
     strcpy(aux1,buf);
     char* command = strtok(aux," ");
-    char* _id = strtok(NULL," ");
-    int id = atoi(_id);
+    int id = atoi(strtok(NULL," "));
     if(!(prefix(aux,"node"))) {
         char* componente = strtok(NULL," ");
+        /*Passamos com uma string só ou cada indice um argumento?*/
         char* argumentos = strtok(NULL, "\n");
         printf("%d\n%s\n%s\n",id,&*componente,&*argumentos);
-
+        /*Retante codido de criação de pipe*/
         //execvp(componente[0],argumentos)
 
     }
@@ -132,7 +135,7 @@ int main() {
       while((_campo = strtok(NULL," ")) != NULL) {
         char* aux2 = malloc(sizeof(char)*strlen(_campo));
         strcpy(aux2,_campo);
-        ids[j]=atoi(aux2);
+        ids[j]=atoi(aux2); /*Armazena em ids[j] os vários id a connectar */
         j++;
       }
       for(i=0;i<j;i++){
@@ -140,11 +143,38 @@ int main() {
       }
     }
     else if (!(prefix(aux,"disconnect"))) {
-      char* _id2 = strtok(NULL, "\n");
-      int id2 = atoi(_id2);
-      printf("O id %d vai se desconectar do id %d\n",id,id2);
+      //char* _id2 = strtok(NULL, "\n");
+      int id2 = atoi(strtok(NULL," ")); /*Id a desconectar*/
+      if(id2==0 || id ==0 || (strtok(NULL," ") != NULL)) printf("Introduza uma linha válida!\n");
+      else{
+        printf("O id %d vai se desconectar do id %d\n",id,id2);
+        char* disconnect = "disconnect";
+        char _id = id;
+        char _id2 = id2;
+        char* mensagem = malloc(sizeof(char)*12);
+        //Disconnect 'id a desconectar'
+        for(i=0;i<10;i++) mensagem[i]=disconnect[i];
+        mensagem[10] = ' ';
+        mensagem[11] = _id2;
+        mensagem[12] = '\n';
+        printf("Mensagem a enviar: %s",&*mensagem);
+
+        //Procura o pipe
+        char* str = "pipe_worker";
+        char* nomePipe = malloc(sizeof(char)*12);
+        for(i=0;i<10;i++) nomePipe[i]=str[i];
+        nomePipe[10] = ' ';
+        nomePipe[11] = _id;
+        nomePipe[12] = '\n';
+
+        int pipe = open(nomePipe, O_WRONLY);
+        write(pipe,mensagem,12);
+        close(pipe);
+      }
       // Restante Código de disconnect
     }
+    else printf("Introduza uma linha válida!\n");
 	}
+  printf("A sair do programa!\n");
   return 0;
 }
