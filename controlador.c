@@ -1,10 +1,15 @@
 #include <unistd.h> /* chamadas ao sistema: defs e decls essenciais */
 #include <fcntl.h> /*File control -> O_RDONLY, O_WRONLY, O_CREAT, O_* */
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
-#define PIPE_BUF 100
+#include <signal.h>
+#include "readln.h"
+#define PIPE_BUF 128
+
+
 
 ssize_t readLn(int fildes, char *buf, size_t nbyte, int* caracteresL) {
   int nCarateresL = 0;
@@ -30,6 +35,16 @@ ssize_t readLn(int fildes, char *buf, size_t nbyte, int* caracteresL) {
   return (aux - buf);
 }
 
+
+char* nome(int id) {
+  char* pipeNome = malloc(sizeof(char)*id);
+  while(id!=0){
+    pipeNome=addChar(pipeNome,a);
+  }
+  return pipeNome;
+}
+
+
 int prefix(const char *command, const char *test) {
   return strncmp(command,test,strlen(test));
 }
@@ -43,9 +58,9 @@ char* addChar(char* str, char c){
     return new;
   }
   //Caso exista o char na string, retorna a mesma
-  for(i=0; i < strlen(str); i++) {
+  /*for(i=0; i < strlen(str); i++) {
     if(str[i] == c) return str;
-  }
+  }*/
   //Cria uma string com mais um elemento que a str
   char *new = malloc(sizeof(char)*(i+1));
   for(i=0;i<strlen(str);i++){
@@ -99,7 +114,16 @@ int readC(char** commands) {
 }*/
 
 
-int main() {
+int run() {
+  int i;
+  int* nodosLigados[10];
+  int nNodosLigados[10];
+  for(i=0;i<10;i++){
+    nodosLigados[i]=malloc(sizeof(int));
+    nNodosLigados[i]=0;
+
+  }
+
   char* buf= malloc(sizeof(char)*100);   //buffer para a leitura do input
   int* c = malloc(sizeof(int));  //
   int n;
@@ -155,16 +179,17 @@ int main() {
         //Disconnect 'id a desconectar'
         for(i=0;i<10;i++) mensagem[i]=disconnect[i];
         mensagem[10] = ' ';
-        mensagem[11] = _id2;
+        mensagem[11] = codigo(_id2);
         mensagem[12] = '\n';
         printf("Mensagem a enviar: %s",&*mensagem);
+        printf("teste: %c",mensagem[11]);
 
         //Procura o pipe
         char* str = "pipe_worker";
         char* nomePipe = malloc(sizeof(char)*12);
         for(i=0;i<10;i++) nomePipe[i]=str[i];
         nomePipe[10] = ' ';
-        nomePipe[11] = _id;
+        nomePipe[11] = codigo(_id);
         nomePipe[12] = '\n';
 
         int pipe = open(nomePipe, O_WRONLY);
@@ -177,4 +202,9 @@ int main() {
 	}
   printf("A sair do programa!\n");
   return 0;
+}
+
+int main (){
+  run();
+  return 1;
 }
