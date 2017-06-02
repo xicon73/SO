@@ -153,6 +153,9 @@ int readC(char** commands) {
   return i;
 }*/
 
+void s(){
+  _exit(0);
+}
 
 int run() {
   int* nodosLigados[10];
@@ -198,19 +201,115 @@ int run() {
         int pipe2[2];
         pipe(pipe2);
 
-        pid_t pid_2 = fork();
-        if(!pid_2) {
+        pid_t pid_1 = fork();
+        if(!pid_1) {
 
           signal(SIGUSR1,s);
 
           int pipe0;
           char* nomePipe0 = malloc(sizeof(char)*(strlen(_id)+5));
           nomePipe0 = strcat(nomePipe0,"pipe0");
+          nomePipe0 = strcat(nomePipe0,_id);
 
+          mkfifo(nomePipe0,0666);
+
+          pipe0 = open(nomePipe0, O_RDWR);
+
+          dup2(pipe0,0);
+          close(pipe0);
+
+          close(pipe2[0]);
+          dup2(pipe2[1],1);
+          close(pipe2[1]);
+
+          //execvp(componente[0],argumentos)
         }
 
+        pid1[id] = pid_1;
+
+        char* nomePipe3 = malloc(sizeof(char));
+        nomePipe3 = strcat(nomePipe3,"pipe3");
+        nomePipe3 = strcat(nomePipe3,_id);
+
+        mkfifo(nomePipe3,0666);
+
+        pid_t pid_2 = fork();
+        if(!pid_2){
+          signal(SIGUSR1,s);
+          int pipe3;
+          pipe3 = open(nomePipe3, O_WRONLY);
+
+          close(pipe2[1]);
+
+          char* output = malloc(sizeof(char)*PIPE_BUF);
+          int* nCarateresL = malloc(sizeof(int));
+          int o;
+
+
+          while((o = readLn(pipe2[0],output,1,nCarateresL))) {
+            write(pipe3,output,*nCarateresL);
+          }
+
+          close(pipe2[0]);
+          close(pipe3);
+          _exit(0);
+        }
+
+        pid2[id] = pid_2;
+
+        pid_t pid_3 = fork();
+      if(!pid_3) {
+        signal(SIGUSR1,s);
+        close(pipe2[0]);
+        close(pipe2[1]);
+
+        int* ndos = NULL;
+        int numero = 0;
+        int pipe3;
+
+        pipe3 = open(nomePipe3, O_RDWR);
+
+        int o;
+        char* output = malloc(sizeof(char)*PIPE_BUF);
+        int* nCarateresL = malloc(sizeof(int));
+
+        while((o = readLn(pipe3,output,1,nCarateresL))) {
+          if(strncmp("connect",output,7)){
+            char * temp = strtok(output," ");
+            while((temp = strtok(NULL," ")) != NULL) {
+              int idNovo = atoi(temp);
+              ndos = adicionaNodo(ndos,&numero,idNovo);
+              break;
+            }
+          }
+          else if(strncmp("disconnect",output,10)){
+            char * temp = strtok(output," ");
+            while((temp = strtok(NULL," ")) != NULL) {
+              int idVelho = atoi(temp);
+              ndos = removeNodo(ndos,&numero,idVelho);
+              break;
+            }
+          }
+          else {
+            for(int k = 0; k < numero; k++) {
+              char* nomePipe0 = malloc(sizeof(char));
+              sprintf(_id,"%d",ndos[k]);
+              nomePipe0 = strcat(nomePipe0,"pipe0");
+              nomePipe0 = strcat(nomePipe0,_id);
+
+              int pipe0 = open(nomePipe0,O_WRONLY);
+              write(pipe0,output,*nCarateresL);
+
+              close(pipe0);
+            }
+          }
+        }
+        close(pipe3);
+        _exit(0);
       }
-      else if (!(strncmp(aux,"connect",7))){
+      pid3[id]=pid_3;
+    }
+    else if (!(strncmp(aux,"connect",7))){
       int i = 0;
       char* campo;
       while((campo = strtok(NULL," ")) != NULL) {
@@ -226,6 +325,7 @@ int run() {
         ids[j]=atoi(aux2); /*Armazena em ids[j] os vários id a connectar */
         nodosLigados[id]=adicionaNodo(nodosLigados[id],&nNodosLigados[id],ids[j]);
         j++;
+        printf("Está lido a este nodo: %d\n",*nodosLigados[id]);
       }
       for(i=0;i<j;i++){
         printf("o id %d vai se ligar ao id %d\n",id,ids[i]);
@@ -254,9 +354,7 @@ int run() {
       write(pipe3,mensagem,strlen(mensagem));
 
       close(pipe3);
-
-
-    }
+      }
       else if (!(strncmp(aux,"disconnect",10))) {
       //char* _id2 = strtok(NULL, "\n");
       int id2 = atoi(strtok(NULL," ")); /*Id a desconectar*/
