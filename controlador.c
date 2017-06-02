@@ -117,7 +117,7 @@ int* removeNodo(int* listaNodos, int* tamanho, int id) {
     }
   }
   if(teste==0) perror("Não existe ligação ao nodo inserido!\n");
-  else {(*tamanho)--;return aux;}
+  else {(*tamanho)-- ; return aux;}
   return listaNodos;
 }
 
@@ -158,18 +158,14 @@ void s(){
 }
 
 int run() {
-  int* nodosLigados[10];
-  int nNodosLigados[10];
-  pid_t pid1[10];//Pipe que recebe os comandos e executa os componentes
-  pid_t pid2[10];//Pipe que recebe o resultado dos componentes
-  pid_t pid3[10];//Pipe que envia e connecta o que recebe de 2 para o/s nodo/s
-  char* buf= malloc(sizeof(char)*100);   //buffer para a leitura do input
-  int* c = malloc(sizeof(int));  //
-  int n;
-  int sair = 0;
+  int* nodosLigados[100];
+  int nNodosLigados[100];
+  pid_t pid1[100];//Pipe que recebe os comandos e executa os componentes
+  pid_t pid2[100];//Pipe que recebe o resultado dos componentes
+  pid_t pid3[100];//Pipe que envia e connecta o que recebe de 2 para o/s nodo/s
   int i;
 
-  for(i=0;i<10;i++){
+  for(i=0;i<100;i++){
     nodosLigados[i]=malloc(sizeof(int));
     nNodosLigados[i]=0;
     pid1[i]=-1;
@@ -177,225 +173,216 @@ int run() {
     pid3[i]=-1;
   }
 
+  char* buf= malloc(sizeof(char)*100);   //buffer para a leitura do input
+  int* c = malloc(sizeof(int));  //
+  int n;
+  int sair = 0;
 
-  while((n = readLn(0,buf,1,c))) {
-    if(strlen(buf)<4) perror("Introduza uma linha válida\n");
-    else{
-      if(!(strncmp(buf,"sair",4))) break;
-      char* aux = malloc(sizeof(char)*strlen(buf));
-      strcpy(aux,buf);
-      char* aux1 = malloc(sizeof(char)*strlen(buf));
-      strcpy(aux1,buf);
-      char* command = strtok(aux," ");
-      int id = atoi(strtok(NULL," "));
-      if(!(strncmp(buf,"node",4))) {
-        char* _id = malloc(sizeof(char));
-        sprintf(_id,"%d",id);
-        char* componente = strtok(NULL," ");
-        /*Passamos com uma string só ou cada indice um argumento?*/
-        char* argumentos = strtok(NULL, "\n");
-        printf("%d\n%s\n%s\n",id,&*componente,&*argumentos);
-        /*Retante codido de criação de pipe*/
-        //execvp(componente[0],argumentos)
+    while((n = readLn(0,buf,1,c))) {
+      if(strlen(buf)<4) perror("Introduza uma linha válida\n");
+      else{
+        if(!(prefix(buf,"sair"))) break;
+        char* aux = malloc(sizeof(char)*strlen(buf)); //copia1
+        strcpy(aux,buf);
+        char* aux1 = malloc(sizeof(char)*strlen(buf)); //copia2
+        strcpy(aux1,buf);
+        char* command = strtok(aux," "); //comando
+        int id = atoi(strtok(NULL," ")); //id
+        if(!(prefix(buf,"node"))) {
+          char* _id = malloc(sizeof(char));
+          sprintf(_id,"%d",id);
+          char* componente = strtok(NULL," ");
+          char* argumentos = strtok(NULL, "\n");
 
-        int pipe2[2];
-        pipe(pipe2);
+          int pipe2[2];
+          pipe(pipe2);
 
-        pid_t pid_1 = fork();
-        if(!pid_1) {
+          pid_t pid_1 = fork();
+          if(!pid_1) {
 
-          signal(SIGUSR1,s);
+            signal(SIGUSR1,s);
 
-          int pipe0;
-          char* nomePipe0 = malloc(sizeof(char)*(strlen(_id)+5));
-          nomePipe0 = strcat(nomePipe0,"pipe0");
-          nomePipe0 = strcat(nomePipe0,_id);
+            int pipe0;
+            char* nomePipe0 = malloc(sizeof(char)*(strlen(_id)+5));
+            nomePipe0 = strcat(nomePipe0,"pipe0");
+            nomePipe0 = strcat(nomePipe0,_id);
 
-          mkfifo(nomePipe0,0666);
+            mkfifo(nomePipe0,0666);
 
-          pipe0 = open(nomePipe0, O_RDWR);
+            pipe0 = open(nomePipe0, O_RDWR);
 
-          dup2(pipe0,0);
-          close(pipe0);
+            dup2(pipe0,0);
+            close(pipe0);
 
-          close(pipe2[0]);
-          dup2(pipe2[1],1);
-          close(pipe2[1]);
+            close(pipe2[0]);
+            dup2(pipe2[1],1);
+            close(pipe2[1]);
 
-          //execvp(componente[0],argumentos)
-        }
-
-        pid1[id] = pid_1;
-
-        char* nomePipe3 = malloc(sizeof(char));
-        nomePipe3 = strcat(nomePipe3,"pipe3");
-        nomePipe3 = strcat(nomePipe3,_id);
-
-        mkfifo(nomePipe3,0666);
-
-        pid_t pid_2 = fork();
-        if(!pid_2){
-          signal(SIGUSR1,s);
-          int pipe3;
-          pipe3 = open(nomePipe3, O_WRONLY);
-
-          close(pipe2[1]);
-
-          char* output = malloc(sizeof(char)*PIPE_BUF);
-          int* nCarateresL = malloc(sizeof(int));
-          int o;
-
-
-          while((o = readLn(pipe2[0],output,1,nCarateresL))) {
-            write(pipe3,output,*nCarateresL);
+            //execvp(componente[0],argumentos)
           }
 
-          close(pipe2[0]);
-          close(pipe3);
-          _exit(0);
-        }
+          pid1[id] = pid_1;
 
-        pid2[id] = pid_2;
+          char* nomePipe3 = malloc(sizeof(char));
+          nomePipe3 = strcat(nomePipe3,"pipe3");
+          nomePipe3 = strcat(nomePipe3,_id);
 
-        pid_t pid_3 = fork();
-        if(!pid_3) {
-          signal(SIGUSR1,s);
-          close(pipe2[0]);
-          close(pipe2[1]);
+          mkfifo(nomePipe3,0666);
 
-          int* ndos = NULL;
-          int numero = 0;
-          int pipe3;
-
-          pipe3 = open(nomePipe3, O_RDWR);
-
-          int o;
-          char* output = malloc(sizeof(char)*PIPE_BUF);
-          int* nCarateresL = malloc(sizeof(int));
-
-          while((o = readLn(pipe3,output,1,nCarateresL))) {
-            if(strncmp("connect",output,7)){
-              char * temp = strtok(output," ");
-              while((temp = strtok(NULL," ")) != NULL) {
-                int idNovo = atoi(temp);
-                ndos = adicionaNodo(ndos,&numero,idNovo);
-                break;
-              }
-            }
-            else if(strncmp("disconnect",output,10)){
-              char * temp = strtok(output," ");
-              while((temp = strtok(NULL," ")) != NULL) {
-                int idVelho = atoi(temp);
-                ndos = removeNodo(ndos,&numero,idVelho);
-                break;
-              }
-            }
-            else {
-              for(int k = 0; k < numero; k++) {
-                char* nomePipe0 = malloc(sizeof(char));
-                sprintf(_id,"%d",ndos[k]);
-                nomePipe0 = strcat(nomePipe0,"pipe0");
-                nomePipe0 = strcat(nomePipe0,_id);
-
-                int pipe0 = open(nomePipe0,O_WRONLY);
-                write(pipe0,output,*nCarateresL);
-
-                close(pipe0);
-              }
-            }
-          }
-          close(pipe3);
-          _exit(0);
-        }
-        pid3[id]=pid_3;
-      }
-      else if (!(strncmp(buf,"connect",7))){
-        int i = 0;
-        char* campo;
-        while((campo = strtok(NULL," ")) != NULL) {
-          i++;
-        }
-        int ids[i];
-        int j=0;
-        char* _campo = strtok(aux1," ");
-        _campo = strtok(NULL, " ");
-        while((_campo = strtok(NULL," ")) != NULL) {
-          char* aux2 = malloc(sizeof(char)*strlen(_campo));
-          strcpy(aux2,_campo);
-          ids[j]=atoi(aux2); /*Armazena em ids[j] os vários id a connectar */
-          nodosLigados[id]=adicionaNodo(nodosLigados[id],&nNodosLigados[id],ids[j]);
-          j++;
-          printf("Está lido a este nodo: %d\n",*nodosLigados[id]);
-        }
-        for(i=0;i<j;i++){
-          printf("o id %d vai se ligar ao id %d\n",id,ids[i]);
-        }
-        char* _id = malloc(sizeof(char));
-        sprintf(_id,"%d",id);
-        char* _id2 = malloc(sizeof(char));
-        char* mensagem = malloc(sizeof(char));
-        mensagem = strcat(mensagem,"connect ");
-        for(i=0;i<j;i++){
-          sprintf(_id2,"%d",ids[i]);
-          mensagem = strcat(mensagem,_id2);
-          if(i!=j-1) mensagem = strcat(mensagem, " ");
-        }
-        mensagem = strcat(mensagem,"\n");
-
-        printf("Mensagem a enviar: %s",&*mensagem);
-
-        char* nomePipe3 = malloc(sizeof(char));
-        nomePipe3 = strcat(nomePipe3,"pipe3");
-        nomePipe3 = strcat(nomePipe3,_id);
-        printf("nome do pipe: %s",&*nomePipe3);
-        int pipe3;
-
-        pipe3 = open(nomePipe3, O_WRONLY);
-        write(pipe3,mensagem,strlen(mensagem));
-
-        close(pipe3);
-      }
-      else if (!(strncmp(buf,"disconnect",10))) {
-        //char* _id2 = strtok(NULL, "\n");
-        int id2 = atoi(strtok(NULL," ")); /*Id a desconectar*/
-        if(id2==0 || id ==0 || (strtok(NULL," ") != NULL)) perror("Introduza uma linha válida!\n");
-        else{
-          int pipe3; //pipe que envia a linha do nodo id
-        //printf("O id %d vai se desconectar do id %d\n",id,id2);
-          int teste = nNodosLigados[id];
-        //nodosLigados[id] = removeNodo(nodosLigados[id],&nNodosLigados[id],id2);
-          if(teste==nNodosLigados[id]) {
-            char* _id = malloc(sizeof(char));
-            sprintf(_id,"%d",id);
-          //printf("%c\n",id);
-            char* _id2 = malloc(sizeof(char));
-            sprintf(_id2,"%d\n",id2);
-
-
-            char* mensagem = malloc(sizeof(char));
-
-            //Disconnect 'id a desconectar'
-            mensagem = strcat(mensagem,"disconnect ");
-            mensagem = strcat(mensagem, _id2);
-            printf("Mensagem a enviar: %s",&*mensagem);
-
-            char* nomePipe3 = malloc(sizeof(char));
-            nomePipe3 = strcat(nomePipe3,"pipe3");
-            nomePipe3 = strcat(nomePipe3,_id);
-            printf("nome do pipe: %s",&*nomePipe3);
-
+          pid_t pid_2 = fork();
+          if(!pid_2){
+            signal(SIGUSR1,s);
+            int pipe3;
             pipe3 = open(nomePipe3, O_WRONLY);
-            write(pipe3,mensagem,strlen(mensagem));
 
+            close(pipe2[1]);
+
+            char* output = malloc(sizeof(char)*PIPE_BUF);
+            int* nCarateresL = malloc(sizeof(int));
+            int o;
+
+
+            while((o = readLn(pipe2[0],output,1,nCarateresL))) {
+              write(pipe3,output,*nCarateresL);
+            }
+
+            close(pipe2[0]);
             close(pipe3);
+            _exit(0);
+          }
+
+          pid2[id] = pid_2;
+
+          pid_t pid_3 = fork();
+          if(!pid_3) {
+            signal(SIGUSR1,s);
+            close(pipe2[0]);
+            close(pipe2[1]);
+
+            int* ndos = NULL;
+            int numero = 0;
+            int pipe3;
+
+            pipe3 = open(nomePipe3, O_RDWR);
+
+            int o;
+            char* output = malloc(sizeof(char)*PIPE_BUF);
+            int* nCarateresL = malloc(sizeof(int));
+
+            while((o = readLn(pipe3,output,1,nCarateresL))) {
+              if(!(prefix("connect",output))){
+                char * temp = strtok(output," ");
+                while((temp = strtok(NULL," ")) != NULL) {
+                  int idNovo = atoi(temp);
+                  ndos = adicionaNodo(ndos,&numero,idNovo);
+                  break;
+                }
+              }
+              else if(!(prefix("disconnect",output))){
+                char * temp = strtok(output," ");
+                while((temp = strtok(NULL," ")) != NULL) {
+                  int idVelho = atoi(temp);
+                  ndos = removeNodo(ndos,&numero,idVelho);
+                  break;
+                }
+              }
+              else {
+                for(int k = 0; k < numero; k++) {
+                  char* nomePipe0 = malloc(sizeof(char));
+                  sprintf(_id,"%d",ndos[k]);
+                  nomePipe0 = strcat(nomePipe0,"pipe0");
+                  nomePipe0 = strcat(nomePipe0,_id);
+
+                  int pipe0 = open(nomePipe0,O_WRONLY);
+                  write(pipe0,output,*nCarateresL);
+
+                  close(pipe0);
+                }
+              }
+            }
+            close(pipe3);
+            _exit(0);
+          }
+          pid3[id]=pid_3;
+        }
+        else if (!(prefix(buf,"connect"))){
+          int i = 0;
+          char* campo;
+          while((campo = strtok(NULL," ")) != NULL) {
+            i++;
+          }
+          int ids[i];
+          int j=0;
+          char* _campo = strtok(aux1," ");
+          _campo = strtok(NULL, " ");
+          while((_campo = strtok(NULL," ")) != NULL) {
+            char* aux2 = malloc(sizeof(char)*strlen(_campo));
+            strcpy(aux2,_campo);
+            ids[j]=atoi(aux2); /*Armazena em ids[j] os vários id a connectar */
+            nodosLigados[id]=adicionaNodo(nodosLigados[id],&nNodosLigados[id],ids[j]);
+            j++;
+          }
+
+          char* _id = malloc(sizeof(char));
+          sprintf(_id,"%d",id);
+          char* _id2 = malloc(sizeof(char));
+          char* mensagem = malloc(sizeof(char));
+          mensagem = strcat(mensagem,"connect ");
+          for(i=0;i<j;i++){
+            sprintf(_id2,"%d",ids[i]);
+            mensagem = strcat(mensagem,_id2);
+            if(i!=j-1) mensagem = strcat(mensagem, " ");
+          }
+          mensagem = strcat(mensagem,"\n");
+
+          char* nomePipe3 = malloc(sizeof(char));
+          nomePipe3 = strcat(nomePipe3,"pipe3");
+          nomePipe3 = strcat(nomePipe3,_id);
+          int pipe3;
+
+          pipe3 = open(nomePipe3, O_WRONLY);
+          write(pipe3,mensagem,strlen(mensagem));
+
+          close(pipe3);
+        }
+        else if (!(prefix(buf,"disconnect"))) {
+          //char* _id2 = strtok(NULL, "\n");
+          int id2 = atoi(strtok(NULL," ")); /*Id a desconectar*/
+          if(id2==0 || id ==0 || (strtok(NULL," ") != NULL)) perror("Introduza uma linha válida!\n");
+          else{
+            int pipe3; //pipe que envia a linha do nodo id
+        //printf("O id %d vai se desconectar do id %d\n",id,id2);
+            int teste = nNodosLigados[id];
+            nodosLigados[id] = removeNodo(nodosLigados[id],&nNodosLigados[id],id2);
+            if(teste==nNodosLigados[id]) {
+              char* _id = malloc(sizeof(char));
+              sprintf(_id,"%d",id);
+          //printf("%c\n",id);
+              char* _id2 = malloc(sizeof(char));
+              sprintf(_id2,"%d\n",id2);
+
+
+              char* mensagem = malloc(sizeof(char));
+
+              //Disconnect 'id a desconectar'
+              mensagem = strcat(mensagem,"disconnect ");
+              mensagem = strcat(mensagem, _id2);
+
+              char* nomePipe3 = malloc(sizeof(char));
+              nomePipe3 = strcat(nomePipe3,"pipe3");
+              nomePipe3 = strcat(nomePipe3,_id);
+
+              pipe3 = open(nomePipe3, O_WRONLY);
+              write(pipe3,mensagem,strlen(mensagem));
+
+              close(pipe3);
+            }
           }
         }
-      }
-      else if (!(strncmp(buf,"inject",6))) {
+        else if (!(prefix(buf,"inject"))) {
         char* _id = malloc(sizeof(char));
         sprintf(_id,"%d",id);
         char* componente = strtok(NULL," ");
-        /*Passamos com uma string só ou cada indice um argumento?*/
         char* argumentos = strtok(NULL, "\n");
 
   			//-> Argumentos contidos no array argumentos têm sido os esperados, em todos os casos de teste.
@@ -410,7 +397,7 @@ int run() {
   					close(pipe0);
 
   					execvp(componente,&argumentos);
-  					perror("erro no execvp do inject");
+  					perror("Erro no execvp do inject");
   					_exit(0);
   				}
   				wait(0);
